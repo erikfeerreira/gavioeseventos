@@ -40,7 +40,7 @@ function CheckIn() {
   useEffect(() => {
     if (!eventId && events.data?.length) {
       const open = events.data.find((e) => e.status === "published") ?? events.data[0];
-      setEventId(open.id);
+      if (open) setEventId(open.id);
     }
   }, [events.data, eventId]);
 

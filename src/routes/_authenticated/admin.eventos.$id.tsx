@@ -80,7 +80,7 @@ function EventSettings() {
     mutationFn: async () => {
       if (!f) return;
       const slug = slugSchema.safeParse(f.slug);
-      if (!slug.success) throw new Error(slug.error.issues[0].message);
+      if (!slug.success) throw new Error(slug.error.issues[0]?.message ?? "Endereço inválido.");
       if (!f.name.trim()) throw new Error("Informe o nome do evento.");
       const consentChanged = ev.data && ev.data.consent_text !== f.consent_text;
       const nextVersion = consentChanged ? `v${Number((f.consent_version || "v1").replace(/\D/g, "") || 1) + 1}` : f.consent_version;

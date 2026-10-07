@@ -41,7 +41,8 @@ function ParticipantTable() {
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (!eventId && events.data?.length) setEventId(events.data[0].id);
+    const first = events.data?.[0];
+    if (!eventId && first) setEventId(first.id);
   }, [events.data, eventId]);
 
   const regs = useQuery({
@@ -97,7 +98,7 @@ function ParticipantTable() {
   function exportCsv() {
     const evName = (id: string) => events.data?.find((e) => e.id === id)?.name ?? "";
     const header = ["Evento", "Código", "Nome", "Sobrenome", "CPF", "WhatsApp", "Nascimento", "Alimento", "Status", "Check-in", "Inscrição"];
-    const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    const esc = (v: string | undefined) => `"${(v ?? "").replace(/"/g, '""')}"`;
     const lines = filtered.map((r) => [
       evName(r.event_id), r.registration_code, r.participants?.first_name ?? "", r.participants?.last_name ?? "",
       r.participants?.cpf ?? "", r.participants?.whatsapp ?? "", formatDate(r.participants?.birth_date) ?? "",

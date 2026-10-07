@@ -86,7 +86,7 @@ const ERRORS: Record<string, string> = {
 
 export function friendlyError(err: unknown): string {
   const msg = (err as { message?: string })?.message || "";
-  for (const key of Object.keys(ERRORS)) if (msg.includes(key)) return ERRORS[key];
+  for (const key of Object.keys(ERRORS)) if (msg.includes(key)) return ERRORS[key] ?? "";
   if (/fetch|network/i.test(msg)) return "Erro de conexão. Verifique sua internet e tente novamente.";
   if (/JWT|session/i.test(msg)) return "Sua sessão expirou. Entre novamente.";
   return "Não foi possível concluir agora. Tente novamente em instantes.";

@@ -21,7 +21,8 @@ function Dashboard() {
     if (!isLoading && !isManager) navigate({ to: "/checkin" });
   }, [isLoading, isManager, navigate]);
   useEffect(() => {
-    if (!eventId && events.data?.length) setEventId(events.data[0].id);
+    const first = events.data?.[0];
+    if (!eventId && first) setEventId(first.id);
   }, [events.data, eventId]);
 
   const regs = useQuery({
