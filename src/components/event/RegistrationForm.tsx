@@ -20,7 +20,7 @@ const schema = z.object({
     .refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && v >= "1900-01-01" && v <= today(), "Data de nascimento inválida."),
   whatsapp: z.string().refine((v) => !v || [10, 11].includes(onlyDigits(v).length), "WhatsApp inválido. Use DDD + número."),
   food: z.string().trim().max(200),
-  consent: z.literal(true, { errorMap: () => ({ message: "É preciso aceitar para continuar." }) }),
+  consent: z.boolean().refine((v) => v, "É preciso aceitar para continuar."),
 });
 
 type Form = { firstName: string; lastName: string; cpf: string; birthDate: string; whatsapp: string; food: string; consent: boolean };
