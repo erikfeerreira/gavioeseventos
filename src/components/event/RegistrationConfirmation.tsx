@@ -10,8 +10,10 @@ export function RegistrationConfirmation({ event, registration }: { event: Event
   const [qr, setQr] = useState<string | null>(null);
   useEffect(() => {
     // qrcode only loads in the browser, never during SSR/production build
+    if (import.meta.env.SSR) return;
     let cancelled = false;
-    import("qrcode").then(({ default: QRCode }) => {
+    // browser entry point: no Node APIs, safe for the server bundle
+    import("qrcode/lib/browser").then(({ default: QRCode }) => {
       const url = `${window.location.origin}/checkin?codigo=${registration.registration_code}`;
       QRCode.toDataURL(url, { margin: 1, width: 360 })
         .then((data) => { if (!cancelled) setQr(data); })
