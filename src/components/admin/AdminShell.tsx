@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/brand/Logo";
 import { useRoles } from "@/lib/use-roles";
 
+type AdminTo = "/admin" | "/admin/participantes" | "/checkin" | "/admin/eventos" | "/admin/parceiros" | "/admin/usuarios";
+
 export function AdminShell({ children }: { children: ReactNode }) {
   const { isAdmin, isManager, isTeam, isLoading, email } = useRoles();
   const qc = useQueryClient();
@@ -18,13 +20,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }
 
   const links = [
-    isManager && { to: "/admin", label: "Painel" },
-    isManager && { to: "/admin/participantes", label: "Participantes" },
-    isTeam && { to: "/checkin", label: "Check-in" },
-    isManager && { to: "/admin/eventos", label: "Eventos" },
-    isManager && { to: "/admin/parceiros", label: "Parceiros" },
-    isAdmin && { to: "/admin/usuarios", label: "Equipe" },
-  ].filter(Boolean) as { to: string; label: string }[];
+    isManager && { to: "/admin" as AdminTo, label: "Painel" },
+    isManager && { to: "/admin/participantes" as AdminTo, label: "Participantes" },
+    isTeam && { to: "/checkin" as AdminTo, label: "Check-in" },
+    isManager && { to: "/admin/eventos" as AdminTo, label: "Eventos" },
+    isManager && { to: "/admin/parceiros" as AdminTo, label: "Parceiros" },
+    isAdmin && { to: "/admin/usuarios" as AdminTo, label: "Equipe" },
+  ].filter((l): l is { to: AdminTo; label: string } => !!l);
 
   return (
     <div className="min-h-screen bg-background">
