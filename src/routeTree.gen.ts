@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedCheckinRouteImport } from './routes/_authenticated/checkin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminParticipantesRouteImport } from './routes/_authenticated/admin.participantes'
 import { Route as EventosSlugIndexRouteImport } from './routes/eventos.$slug.index'
 import { Route as EventosSlugConfirmacaoCodigoRouteImport } from './routes/eventos.$slug.confirmacao.$codigo'
 
@@ -35,6 +38,22 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCheckinRoute = AuthenticatedCheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminParticipantesRoute =
+  AuthenticatedAdminParticipantesRouteImport.update({
+    id: '/participantes',
+    path: '/participantes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const EventosSlugIndexRoute = EventosSlugIndexRouteImport.update({
   id: '/eventos/$slug/',
   path: '/eventos/$slug/',
@@ -50,14 +69,19 @@ const EventosSlugConfirmacaoCodigoRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/checkin': typeof AuthenticatedCheckinRoute
+  '/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/eventos/$slug/': typeof EventosSlugIndexRoute
   '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/checkin': typeof AuthenticatedCheckinRoute
+  '/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/eventos/$slug': typeof EventosSlugIndexRoute
   '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
 }
@@ -66,7 +90,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/checkin': typeof AuthenticatedCheckinRoute
+  '/_authenticated/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/eventos/$slug/': typeof EventosSlugIndexRoute
   '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
 }
@@ -76,12 +103,17 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/checkin'
+    | '/admin/participantes'
+    | '/admin/'
     | '/eventos/$slug/'
     | '/eventos/$slug/confirmacao/$codigo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/checkin'
+    | '/admin/participantes'
     | '/admin'
     | '/eventos/$slug'
     | '/eventos/$slug/confirmacao/$codigo'
@@ -91,6 +123,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/checkin'
+    | '/_authenticated/admin/participantes'
+    | '/_authenticated/admin/'
     | '/eventos/$slug/'
     | '/eventos/$slug/confirmacao/$codigo'
   fileRoutesById: FileRoutesById
@@ -133,6 +168,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/checkin': {
+      id: '/_authenticated/checkin'
+      path: '/checkin'
+      fullPath: '/checkin'
+      preLoaderRoute: typeof AuthenticatedCheckinRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/participantes': {
+      id: '/_authenticated/admin/participantes'
+      path: '/participantes'
+      fullPath: '/admin/participantes'
+      preLoaderRoute: typeof AuthenticatedAdminParticipantesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/eventos/$slug/': {
       id: '/eventos/$slug/'
       path: '/eventos/$slug'
@@ -150,12 +206,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminParticipantesRoute: typeof AuthenticatedAdminParticipantesRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminParticipantesRoute: AuthenticatedAdminParticipantesRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedCheckinRoute: typeof AuthenticatedCheckinRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedCheckinRoute: AuthenticatedCheckinRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
