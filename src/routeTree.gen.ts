@@ -10,33 +10,55 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EventosSlugIndexRouteImport } from './routes/eventos.$slug.index'
+import { Route as EventosSlugConfirmacaoCodigoRouteImport } from './routes/eventos.$slug.confirmacao.$codigo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventosSlugIndexRoute = EventosSlugIndexRouteImport.update({
+  id: '/eventos/$slug/',
+  path: '/eventos/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventosSlugConfirmacaoCodigoRoute =
+  EventosSlugConfirmacaoCodigoRouteImport.update({
+    id: '/eventos/$slug/confirmacao/$codigo',
+    path: '/eventos/$slug/confirmacao/$codigo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/eventos/$slug/': typeof EventosSlugIndexRoute
+  '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/eventos/$slug': typeof EventosSlugIndexRoute
+  '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/eventos/$slug/': typeof EventosSlugIndexRoute
+  '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/eventos/$slug/' | '/eventos/$slug/confirmacao/$codigo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/eventos/$slug' | '/eventos/$slug/confirmacao/$codigo'
+  id:
+    '__root__' | '/' | '/eventos/$slug/' | '/eventos/$slug/confirmacao/$codigo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EventosSlugIndexRoute: typeof EventosSlugIndexRoute
+  EventosSlugConfirmacaoCodigoRoute: typeof EventosSlugConfirmacaoCodigoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +70,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/eventos/$slug/': {
+      id: '/eventos/$slug/'
+      path: '/eventos/$slug'
+      fullPath: '/eventos/$slug/'
+      preLoaderRoute: typeof EventosSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eventos/$slug/confirmacao/$codigo': {
+      id: '/eventos/$slug/confirmacao/$codigo'
+      path: '/eventos/$slug/confirmacao/$codigo'
+      fullPath: '/eventos/$slug/confirmacao/$codigo'
+      preLoaderRoute: typeof EventosSlugConfirmacaoCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EventosSlugIndexRoute: EventosSlugIndexRoute,
+  EventosSlugConfirmacaoCodigoRoute: EventosSlugConfirmacaoCodigoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
