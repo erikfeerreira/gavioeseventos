@@ -10,33 +10,184 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedCheckinRouteImport } from './routes/_authenticated/checkin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminParceirosRouteImport } from './routes/_authenticated/admin.parceiros'
+import { Route as AuthenticatedAdminParticipantesRouteImport } from './routes/_authenticated/admin.participantes'
+import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as EventosSlugIndexRouteImport } from './routes/eventos.$slug.index'
+import { Route as AuthenticatedAdminEventosIndexRouteImport } from './routes/_authenticated/admin.eventos.index'
+import { Route as AuthenticatedAdminEventosIdRouteImport } from './routes/_authenticated/admin.eventos.$id'
+import { Route as EventosSlugConfirmacaoCodigoRouteImport } from './routes/eventos.$slug.confirmacao.$codigo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCheckinRoute = AuthenticatedCheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminParceirosRoute =
+  AuthenticatedAdminParceirosRouteImport.update({
+    id: '/parceiros',
+    path: '/parceiros',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminParticipantesRoute =
+  AuthenticatedAdminParticipantesRouteImport.update({
+    id: '/participantes',
+    path: '/participantes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUsuariosRoute =
+  AuthenticatedAdminUsuariosRouteImport.update({
+    id: '/usuarios',
+    path: '/usuarios',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const EventosSlugIndexRoute = EventosSlugIndexRouteImport.update({
+  id: '/eventos/$slug/',
+  path: '/eventos/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminEventosIndexRoute =
+  AuthenticatedAdminEventosIndexRouteImport.update({
+    id: '/eventos/',
+    path: '/eventos/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminEventosIdRoute =
+  AuthenticatedAdminEventosIdRouteImport.update({
+    id: '/eventos/$id',
+    path: '/eventos/$id',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const EventosSlugConfirmacaoCodigoRoute =
+  EventosSlugConfirmacaoCodigoRouteImport.update({
+    id: '/eventos/$slug/confirmacao/$codigo',
+    path: '/eventos/$slug/confirmacao/$codigo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/checkin': typeof AuthenticatedCheckinRoute
+  '/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
+  '/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/eventos/$slug/': typeof EventosSlugIndexRoute
+  '/admin/eventos/$id': typeof AuthenticatedAdminEventosIdRoute
+  '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
+  '/admin/eventos/': typeof AuthenticatedAdminEventosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/checkin': typeof AuthenticatedCheckinRoute
+  '/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
+  '/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
+  '/eventos/$slug': typeof EventosSlugIndexRoute
+  '/admin/eventos/$id': typeof AuthenticatedAdminEventosIdRoute
+  '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
+  '/admin/eventos': typeof AuthenticatedAdminEventosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/checkin': typeof AuthenticatedCheckinRoute
+  '/_authenticated/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
+  '/_authenticated/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
+  '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/eventos/$slug/': typeof EventosSlugIndexRoute
+  '/_authenticated/admin/eventos/$id': typeof AuthenticatedAdminEventosIdRoute
+  '/eventos/$slug/confirmacao/$codigo': typeof EventosSlugConfirmacaoCodigoRoute
+  '/_authenticated/admin/eventos/': typeof AuthenticatedAdminEventosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/checkin'
+    | '/admin/parceiros'
+    | '/admin/participantes'
+    | '/admin/usuarios'
+    | '/admin/'
+    | '/eventos/$slug/'
+    | '/admin/eventos/$id'
+    | '/eventos/$slug/confirmacao/$codigo'
+    | '/admin/eventos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/checkin'
+    | '/admin/parceiros'
+    | '/admin/participantes'
+    | '/admin/usuarios'
+    | '/admin'
+    | '/eventos/$slug'
+    | '/admin/eventos/$id'
+    | '/eventos/$slug/confirmacao/$codigo'
+    | '/admin/eventos'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/admin'
+    | '/_authenticated/checkin'
+    | '/_authenticated/admin/parceiros'
+    | '/_authenticated/admin/participantes'
+    | '/_authenticated/admin/usuarios'
+    | '/_authenticated/admin/'
+    | '/eventos/$slug/'
+    | '/_authenticated/admin/eventos/$id'
+    | '/eventos/$slug/confirmacao/$codigo'
+    | '/_authenticated/admin/eventos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  EventosSlugIndexRoute: typeof EventosSlugIndexRoute
+  EventosSlugConfirmacaoCodigoRoute: typeof EventosSlugConfirmacaoCodigoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +199,133 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/checkin': {
+      id: '/_authenticated/checkin'
+      path: '/checkin'
+      fullPath: '/checkin'
+      preLoaderRoute: typeof AuthenticatedCheckinRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/parceiros': {
+      id: '/_authenticated/admin/parceiros'
+      path: '/parceiros'
+      fullPath: '/admin/parceiros'
+      preLoaderRoute: typeof AuthenticatedAdminParceirosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/participantes': {
+      id: '/_authenticated/admin/participantes'
+      path: '/participantes'
+      fullPath: '/admin/participantes'
+      preLoaderRoute: typeof AuthenticatedAdminParticipantesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/usuarios': {
+      id: '/_authenticated/admin/usuarios'
+      path: '/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/eventos/$slug/': {
+      id: '/eventos/$slug/'
+      path: '/eventos/$slug'
+      fullPath: '/eventos/$slug/'
+      preLoaderRoute: typeof EventosSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/eventos/': {
+      id: '/_authenticated/admin/eventos/'
+      path: '/eventos'
+      fullPath: '/admin/eventos/'
+      preLoaderRoute: typeof AuthenticatedAdminEventosIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/eventos/$id': {
+      id: '/_authenticated/admin/eventos/$id'
+      path: '/eventos/$id'
+      fullPath: '/admin/eventos/$id'
+      preLoaderRoute: typeof AuthenticatedAdminEventosIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/eventos/$slug/confirmacao/$codigo': {
+      id: '/eventos/$slug/confirmacao/$codigo'
+      path: '/eventos/$slug/confirmacao/$codigo'
+      fullPath: '/eventos/$slug/confirmacao/$codigo'
+      preLoaderRoute: typeof EventosSlugConfirmacaoCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminParceirosRoute: typeof AuthenticatedAdminParceirosRoute
+  AuthenticatedAdminParticipantesRoute: typeof AuthenticatedAdminParticipantesRoute
+  AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminEventosIdRoute: typeof AuthenticatedAdminEventosIdRoute
+  AuthenticatedAdminEventosIndexRoute: typeof AuthenticatedAdminEventosIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminParceirosRoute: AuthenticatedAdminParceirosRoute,
+  AuthenticatedAdminParticipantesRoute: AuthenticatedAdminParticipantesRoute,
+  AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminEventosIdRoute: AuthenticatedAdminEventosIdRoute,
+  AuthenticatedAdminEventosIndexRoute: AuthenticatedAdminEventosIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedCheckinRoute: typeof AuthenticatedCheckinRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedCheckinRoute: AuthenticatedCheckinRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  EventosSlugIndexRoute: EventosSlugIndexRoute,
+  EventosSlugConfirmacaoCodigoRoute: EventosSlugConfirmacaoCodigoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
