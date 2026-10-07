@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import QRCode from "qrcode";
 import { Logo } from "@/components/brand/Logo";
 import { asList, calendarUrl, type EventRow } from "@/lib/events";
 import { TO_DEFINE, formatDateLong, formatTime } from "@/lib/format";
@@ -10,8 +9,15 @@ type Reg = { first_name: string; last_name: string; food_item: string | null; re
 export function RegistrationConfirmation({ event, registration }: { event: EventRow; registration: Reg }) {
   const [qr, setQr] = useState<string | null>(null);
   useEffect(() => {
-    const url = `${window.location.origin}/checkin?codigo=${registration.registration_code}`;
-    QRCode.toDataURL(url, { margin: 1, width: 360 }).then(setQr).catch(() => setQr(null));
+    // qrcode only loads in the browser, never during SSR/production build
+    let cancelled = false;
+    import("qrcode").then(({ default: QRCode }) => {
+      const url = `${window.location.origin}/checkin?codigo=${registration.registration_code}`;
+      QRCode.toDataURL(url, { margin: 1, width: 360 })
+        .then((data) => { if (!cancelled) setQr(data); })
+        .catch(() => { if (!cancelled) setQr(null); });
+    }).catch(() => { if (!cancelled) setQr(null); });
+    return () => { cancelled = true; };
   }, [registration.registration_code]);
 
   const cal = calendarUrl(event);
