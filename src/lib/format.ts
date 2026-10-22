@@ -90,6 +90,7 @@ const ERRORS: Record<string, string> = {
   USER_EXISTS: "Este e-mail já tem conta. Ajuste as permissões na lista da equipe.",
   INVALID_EMAIL: "E-mail inválido.",
   INVITE_CLOSED: "Este convite já foi aceito ou cancelado.",
+  LINK_FAILED: "Não foi possível gerar o link. Se a pessoa já tem conta ativa, ajuste as permissões na lista de membros.",
   SEND_FAILED: "Não foi possível enviar o e-mail do convite. Tente novamente.",
 };
 

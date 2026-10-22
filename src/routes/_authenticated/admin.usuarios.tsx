@@ -8,7 +8,7 @@ import { PageTitle } from "@/components/admin/AdminShell";
 import { Input } from "@/components/ui/input";
 import { useRoles, type Role } from "@/lib/use-roles";
 import { formatDateTime, friendlyError } from "@/lib/format";
-import { inviteStaff, listMemberActivity, resendInvite, setMemberAccess } from "@/lib/team.functions";
+import { getInviteLink, inviteStaff, listMemberActivity, resendInvite, setMemberAccess } from "@/lib/team.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   component: Users,
@@ -32,6 +32,8 @@ function Users() {
   const resend = useServerFn(resendInvite);
   const setAccess = useServerFn(setMemberAccess);
   const activityFn = useServerFn(listMemberActivity);
+  const linkFn = useServerFn(getInviteLink);
+  const [shareLink, setShareLink] = useState<{ link: string; name: string } | null>(null);
 
   const team = useQuery({
     queryKey: ["team"],
@@ -71,13 +73,22 @@ function Users() {
     onError: (e) => toast.error(friendlyError(e)),
   });
   const sendInvite = useMutation({
-    mutationFn: (v: { email: string; name: string; role: Role }) => invite({ data: { ...v, origin: window.location.origin } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invites"] }); toast.success("Convite enviado por e-mail."); },
+    mutationFn: (v: { email: string; name: string; role: Role; delivery: "email" | "link" }) => invite({ data: { ...v, origin: window.location.origin } }),
+    onSuccess: (r, v) => {
+      qc.invalidateQueries({ queryKey: ["invites"] });
+      if (r.link) setShareLink({ link: r.link, name: v.name || v.email });
+      else toast.success("Convite enviado por e-mail.");
+    },
     onError: (e) => { qc.invalidateQueries({ queryKey: ["invites"] }); toast.error(friendlyError(e)); },
   });
   const resendMut = useMutation({
     mutationFn: (id: string) => resend({ data: { id, origin: window.location.origin } }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["invites"] }); toast.success("Convite reenviado (válido por mais 24h)."); },
+    onError: (e) => toast.error(friendlyError(e)),
+  });
+  const linkMut = useMutation({
+    mutationFn: (i: { id: string; name: string }) => linkFn({ data: { id: i.id, origin: window.location.origin } }).then((r) => ({ ...r, name: i.name })),
+    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ["invites"] }); setShareLink({ link: r.link, name: r.name }); },
     onError: (e) => toast.error(friendlyError(e)),
   });
   const revoke = useMutation({
@@ -90,10 +101,11 @@ function Users() {
   });
 
   const [form, setForm] = useState({ email: "", name: "", role: "checkin" as Role });
+  const [delivery, setDelivery] = useState<"email" | "link">("link");
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!form.email.trim()) return;
-    sendInvite.mutate(form, { onSuccess: () => setForm({ email: "", name: "", role: "checkin" }) });
+    sendInvite.mutate({ ...form, delivery }, { onSuccess: () => setForm({ email: "", name: "", role: "checkin" }) });
   }
 
   const members = useMemo(() => {
@@ -121,7 +133,7 @@ function Users() {
       <section className="rounded-md border bg-card p-4">
         <h2 className="text-xl font-bold uppercase">Convidar membro</h2>
         <p className="mb-3 text-sm text-muted-foreground">
-          O cadastro público está desligado. A pessoa recebe um link por e-mail (válido por 24h, uso único), define a própria senha e entra já com o cargo escolhido.
+          O cadastro público está desligado. A pessoa recebe um link (pelo WhatsApp ou e-mail) (válido por 24h, uso único), define a própria senha e entra já com o cargo escolhido.
         </p>
         <form onSubmit={submit} className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto]">
           <Input className="h-11" placeholder="Nome" value={form.name} maxLength={120} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -130,9 +142,25 @@ function Users() {
             {ROLES.map((r) => <option key={r.key} value={r.key}>{r.label} — {r.desc}</option>)}
           </select>
           <button disabled={sendInvite.isPending} className="h-11 rounded-md bg-primary px-5 font-display font-bold uppercase text-primary-foreground disabled:opacity-60">
-            {sendInvite.isPending ? "Enviando..." : "Enviar convite"}
+            {sendInvite.isPending ? "Gerando..." : delivery === "link" ? "Gerar link" : "Enviar convite"}
           </button>
         </form>
+        <div className="mt-3 flex flex-wrap gap-4 text-sm">
+          <label className="flex items-center gap-2"><input type="radio" className="accent-primary" checked={delivery === "link"} onChange={() => setDelivery("link")} /> Gerar link para enviar pelo WhatsApp</label>
+          <label className="flex items-center gap-2"><input type="radio" className="accent-primary" checked={delivery === "email"} onChange={() => setDelivery("email")} /> Enviar por e-mail</label>
+        </div>
+        {shareLink && (
+          <div className="mt-4 rounded-md border-2 border-primary p-4">
+            <p className="font-semibold">Link de acesso de {shareLink.name}</p>
+            <p className="text-xs text-muted-foreground">Uso único, vale por 24h. Envie só para a própria pessoa — quem abrir o link cria a senha da conta.</p>
+            <Input readOnly className="mt-2 h-11 text-xs" value={shareLink.link} onFocus={(e) => e.currentTarget.select()} />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => { navigator.clipboard.writeText(shareLink.link); toast.success("Link copiado."); }} className="h-11 rounded-md border px-4 text-sm font-semibold">Copiar link</button>
+              <a target="_blank" rel="noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`Olá! Este é o seu acesso à equipe da Academia Gaviões Poá. Abra o link para criar sua senha (vale por 24h): ${shareLink.link}`)}`} className="flex h-11 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">Enviar pelo WhatsApp</a>
+              <button type="button" onClick={() => setShareLink(null)} className="h-11 px-3 text-sm text-muted-foreground">Fechar</button>
+            </div>
+          </div>
+        )}
       </section>
 
       <section>
@@ -155,7 +183,8 @@ function Users() {
                     <td className="px-3 py-3 text-right">
                       {i.status === "pending" && (
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => resendMut.mutate(i.id)} className="rounded border px-3 py-1.5 text-xs">Reenviar</button>
+                          <button onClick={() => linkMut.mutate({ id: i.id, name: i.name || i.email })} className="rounded border px-3 py-1.5 text-xs">Gerar link</button>
+                          <button onClick={() => resendMut.mutate(i.id)} className="rounded border px-3 py-1.5 text-xs">Reenviar e-mail</button>
                           <button onClick={() => revoke.mutate(i.id)} className="rounded border border-destructive px-3 py-1.5 text-xs text-destructive">Cancelar</button>
                         </div>
                       )}

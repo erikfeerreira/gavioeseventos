@@ -18,13 +18,13 @@ function redirectUrl() {
 
 export const inviteStaff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { email: string; name: string; role: Role; origin: string }) => {
+  .inputValidator((input: { email: string; name: string; role: Role; origin: string; delivery?: "email" | "link" }) => {
     const email = String(input?.email ?? "").trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) throw new Error("INVALID_EMAIL");
     if (!ROLES.includes(input?.role)) throw new Error("INVALID_ROLE");
     const origin = String(input?.origin ?? "");
     if (!/^https?:\/\/[^/]+$/.test(origin)) throw new Error("INVALID_ORIGIN");
-    return { email, name: String(input?.name ?? "").trim().slice(0, 120), role: input.role, origin };
+    return { email, name: String(input?.name ?? "").trim().slice(0, 120), role: input.role, origin, delivery: input?.delivery === "link" ? "link" : "email" };
   })
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
@@ -40,8 +40,17 @@ export const inviteStaff = createServerFn({ method: "POST" })
       if (String(error.message).includes("RATE_LIMIT")) throw new Error("RATE_LIMIT");
       throw new Error("INVITE_FAILED");
     }
+    const redirectTo = redirectUrl() ?? `${data.origin}/definir-senha`;
+    if (data.delivery === "link") {
+      const link = await makeLink(supabaseAdmin, data.email, data.name, redirectTo);
+      if (!link) {
+        await (context as Ctx).supabase.from("staff_invites").update({ status: "revoked" }).eq("id", inv.id);
+        throw new Error("LINK_FAILED");
+      }
+      return { ok: true, link };
+    }
     const { error: sendErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
-      redirectTo: redirectUrl() ?? `${data.origin}/definir-senha`,
+      redirectTo,
       data: { name: data.name },
     });
     if (sendErr) {
@@ -49,7 +58,44 @@ export const inviteStaff = createServerFn({ method: "POST" })
       await (context as Ctx).supabase.from("staff_invites").update({ status: "revoked" }).eq("id", inv.id);
       throw new Error(sendErr.message.toLowerCase().includes("already") ? "USER_EXISTS" : "SEND_FAILED");
     }
-    return { ok: true };
+    return { ok: true, link: null as string | null };
+  });
+
+/** One-time access link (invite, or magic link when the account already exists but never confirmed). */
+async function makeLink(admin: any, email: string, name: string, redirectTo: string): Promise<string | null> {
+  const inv = await admin.auth.admin.generateLink({ type: "invite", email, options: { redirectTo, data: { name } } });
+  if (!inv.error && inv.data?.properties?.action_link) return inv.data.properties.action_link;
+  // Only for accounts that never confirmed: a login link for an active account would let the admin enter as that person
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const existing = list?.users?.find((u: any) => (u.email ?? "").toLowerCase() === email);
+  if (!existing || existing.email_confirmed_at) {
+    console.error("generateLink invite failed", inv.error?.message);
+    return null;
+  }
+  const ml = await admin.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo } });
+  if (!ml.error && ml.data?.properties?.action_link) return ml.data.properties.action_link;
+  console.error("generateLink failed", inv.error?.message, ml.error?.message);
+  return null;
+}
+
+export const getInviteLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { id: string; origin: string }) => {
+    const origin = String(input?.origin ?? "");
+    if (!/^https?:\/\/[^/]+$/.test(origin)) throw new Error("INVALID_ORIGIN");
+    return { id: String(input?.id ?? ""), origin };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as Ctx);
+    const sb = (context as Ctx).supabase;
+    const { data: inv } = await sb.from("staff_invites").select("*").eq("id", data.id).single();
+    if (!inv || inv.status !== "pending") throw new Error("INVITE_CLOSED");
+    const { error } = await sb.from("staff_invites").update({ send_count: inv.send_count + 1 }).eq("id", inv.id);
+    if (error) throw new Error(String(error.message).includes("RATE_LIMIT") ? "RATE_LIMIT" : "INVITE_FAILED");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const link = await makeLink(supabaseAdmin, inv.email, inv.name ?? "", redirectUrl() ?? `${data.origin}/definir-senha`);
+    if (!link) throw new Error("LINK_FAILED");
+    return { link };
   });
 
 export const resendInvite = createServerFn({ method: "POST" })
