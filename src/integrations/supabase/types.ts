@@ -363,6 +363,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           send_count: number
           status: string
+          token_hash: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -376,6 +377,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           send_count?: number
           status?: string
+          token_hash?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -389,6 +391,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           send_count?: number
           status?: string
+          token_hash?: string | null
         }
         Relationships: []
       }

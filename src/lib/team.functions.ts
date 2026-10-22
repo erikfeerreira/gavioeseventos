@@ -42,12 +42,11 @@ export const inviteStaff = createServerFn({ method: "POST" })
     }
     const redirectTo = redirectUrl() ?? `${data.origin}/definir-senha`;
     if (data.delivery === "link") {
-      const link = await makeLink(supabaseAdmin, data.email, data.name, redirectTo);
-      if (!link) {
-        await (context as Ctx).supabase.from("staff_invites").update({ status: "revoked" }).eq("id", inv.id);
-        throw new Error("LINK_FAILED");
-      }
-      return { ok: true, link };
+      const token = newToken();
+      const { error: tErr } = await (context as Ctx).supabase
+        .from("staff_invites").update({ token_hash: await sha256(token) }).eq("id", inv.id);
+      if (tErr) throw new Error("LINK_FAILED");
+      return { ok: true, link: `${data.origin}/convite/${token}` };
     }
     const { error: sendErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
       redirectTo,
@@ -61,23 +60,17 @@ export const inviteStaff = createServerFn({ method: "POST" })
     return { ok: true, link: null as string | null };
   });
 
-/** One-time access link (invite, or magic link when the account already exists but never confirmed). */
-async function makeLink(admin: any, email: string, name: string, redirectTo: string): Promise<string | null> {
-  const inv = await admin.auth.admin.generateLink({ type: "invite", email, options: { redirectTo, data: { name } } });
-  if (!inv.error && inv.data?.properties?.action_link) return inv.data.properties.action_link;
-  // Only for accounts that never confirmed: a login link for an active account would let the admin enter as that person
-  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  const existing = list?.users?.find((u: any) => (u.email ?? "").toLowerCase() === email);
-  if (!existing || existing.email_confirmed_at) {
-    console.error("generateLink invite failed", inv.error?.message);
-    return null;
-  }
-  const ml = await admin.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo } });
-  if (!ml.error && ml.data?.properties?.action_link) return ml.data.properties.action_link;
-  console.error("generateLink failed", inv.error?.message, ml.error?.message);
-  return null;
+function newToken() {
+  const b = new Uint8Array(32);
+  crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+async function sha256(s: string) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(h)).map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
+/** New single-use link for a pending invite; the previous link stops working. */
 export const getInviteLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string; origin: string }) => {
@@ -90,12 +83,66 @@ export const getInviteLink = createServerFn({ method: "POST" })
     const sb = (context as Ctx).supabase;
     const { data: inv } = await sb.from("staff_invites").select("*").eq("id", data.id).single();
     if (!inv || inv.status !== "pending") throw new Error("INVITE_CLOSED");
-    const { error } = await sb.from("staff_invites").update({ send_count: inv.send_count + 1 }).eq("id", inv.id);
+    const token = newToken();
+    const { error } = await sb.from("staff_invites")
+      .update({ send_count: inv.send_count + 1, token_hash: await sha256(token) }).eq("id", inv.id);
     if (error) throw new Error(String(error.message).includes("RATE_LIMIT") ? "RATE_LIMIT" : "INVITE_FAILED");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const link = await makeLink(supabaseAdmin, inv.email, inv.name ?? "", redirectUrl() ?? `${data.origin}/definir-senha`);
-    if (!link) throw new Error("LINK_FAILED");
-    return { link };
+    return { link: `${data.origin}/convite/${token}` };
+  });
+
+async function findInvite(token: string) {
+  if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return null;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("staff_invites").select("*")
+    .eq("token_hash", await sha256(token)).eq("status", "pending").gt("expires_at", new Date().toISOString()).maybeSingle();
+  return data ? { inv: data, admin: supabaseAdmin } : null;
+}
+
+/** Public: shows who the link is for (only while valid). */
+export const checkInviteToken = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => ({ token: String(input?.token ?? "") }))
+  .handler(async ({ data }) => {
+    const f = await findInvite(data.token);
+    return f ? { valid: true as const, email: f.inv.email as string, name: (f.inv.name ?? "") as string } : { valid: false as const };
+  });
+
+/** Public: the invited person sets their password; account is created confirmed and gets the invited role. */
+export const acceptInviteToken = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string; password: string; name: string }) => {
+    const password = String(input?.password ?? "");
+    if (password.length < 8 || password.length > 72) throw new Error("WEAK_PASSWORD");
+    return { token: String(input?.token ?? ""), password, name: String(input?.name ?? "").trim().slice(0, 120) };
+  })
+  .handler(async ({ data }) => {
+    const f = await findInvite(data.token);
+    if (!f) throw new Error("INVITE_INVALID");
+    const { inv, admin } = f;
+    const name = data.name || inv.name || "";
+    let userId: string;
+    const created = await admin.auth.admin.createUser({
+      email: inv.email, password: data.password, email_confirm: true, user_metadata: { name },
+    });
+    if (created.data?.user) {
+      userId = created.data.user.id;
+    } else {
+      // Account left over from an e-mail invite that was never confirmed
+      const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
+      const existing = list?.users?.find((u) => (u.email ?? "").toLowerCase() === inv.email);
+      if (!existing || existing.email_confirmed_at) throw new Error("USER_EXISTS");
+      const upd = await admin.auth.admin.updateUserById(existing.id, { password: data.password, email_confirm: true, user_metadata: { name } });
+      if (upd.error) throw new Error("ACCEPT_FAILED");
+      userId = existing.id;
+    }
+    // Claim the invite once (only if still pending), then apply the role stored in the invite
+    const { data: claimed } = await admin.from("staff_invites")
+      .update({ status: "accepted", accepted_at: new Date().toISOString(), token_hash: null })
+      .eq("id", inv.id).eq("status", "pending").select("id");
+    const { data: roleRow } = await admin.from("user_roles").select("id").eq("user_id", userId).eq("role", inv.role).maybeSingle();
+    if ((claimed && claimed.length) || !roleRow) {
+      if (!roleRow) await admin.from("user_roles").insert({ user_id: userId, role: inv.role });
+    }
+    await admin.from("profiles").update({ name }).eq("id", userId).eq("name", "");
+    return { ok: true, email: inv.email as string };
   });
 
 export const resendInvite = createServerFn({ method: "POST" })
