@@ -7,7 +7,7 @@ import { PageTitle, RequireManager } from "@/components/admin/AdminShell";
 import { EventSelect, useEventsList } from "@/components/admin/EventSelect";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { STATUS_LABEL, formatDate, formatDateTime, friendlyError, maskCpf, maskPhone, onlyDigits } from "@/lib/format";
+import { STATUS_LABEL, csvSafe, formatDate, formatDateTime, friendlyError, maskCpf, maskPhone, onlyDigits } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/participantes")({
   component: () => (
