@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCheckinRouteImport } from './routes/_authenticated/checkin'
+import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminHistoricoRouteImport } from './routes/_authenticated/admin.historico'
 import { Route as AuthenticatedAdminParceirosRouteImport } from './routes/_authenticated/admin.parceiros'
@@ -53,6 +54,11 @@ const AuthenticatedCheckinRoute = AuthenticatedCheckinRouteImport.update({
   id: '/checkin',
   path: '/checkin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ConviteTokenRoute = ConviteTokenRouteImport.update({
+  id: '/convite/$token',
+  path: '/convite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/checkin': typeof AuthenticatedCheckinRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/admin/historico': typeof AuthenticatedAdminHistoricoRoute
   '/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
   '/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/checkin': typeof AuthenticatedCheckinRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/admin/historico': typeof AuthenticatedAdminHistoricoRoute
   '/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
   '/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/definir-senha': typeof DefinirSenhaRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/checkin': typeof AuthenticatedCheckinRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/_authenticated/admin/historico': typeof AuthenticatedAdminHistoricoRoute
   '/_authenticated/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
   '/_authenticated/admin/participantes': typeof AuthenticatedAdminParticipantesRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/checkin'
+    | '/convite/$token'
     | '/admin/historico'
     | '/admin/parceiros'
     | '/admin/participantes'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/definir-senha'
     | '/checkin'
+    | '/convite/$token'
     | '/admin/historico'
     | '/admin/parceiros'
     | '/admin/participantes'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/_authenticated/admin'
     | '/_authenticated/checkin'
+    | '/convite/$token'
     | '/_authenticated/admin/historico'
     | '/_authenticated/admin/parceiros'
     | '/_authenticated/admin/participantes'
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
+  ConviteTokenRoute: typeof ConviteTokenRoute
   EventosSlugIndexRoute: typeof EventosSlugIndexRoute
   EventosSlugConfirmacaoCodigoRoute: typeof EventosSlugConfirmacaoCodigoRoute
 }
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/checkin'
       preLoaderRoute: typeof AuthenticatedCheckinRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/convite/$token': {
+      id: '/convite/$token'
+      path: '/convite/$token'
+      fullPath: '/convite/$token'
+      preLoaderRoute: typeof ConviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
@@ -367,6 +387,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
+  ConviteTokenRoute: ConviteTokenRoute,
   EventosSlugIndexRoute: EventosSlugIndexRoute,
   EventosSlugConfirmacaoCodigoRoute: EventosSlugConfirmacaoCodigoRoute,
 }
