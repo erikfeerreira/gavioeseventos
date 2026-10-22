@@ -21,8 +21,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"in" | "up">("in");
-  const [name, setName] = useState("");
+  const [mode, setMode] = useState<"in" | "forgot">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<{ type: "error" | "ok"; text: string } | null>(null);
@@ -31,25 +30,19 @@ function AuthPage() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     setMsg(null);
-    if (!email.trim() || password.length < 6) {
-      setMsg({ type: "error", text: "Informe e-mail e senha (mínimo 6 caracteres)." });
-      return;
-    }
+    if (!email.trim()) return setMsg({ type: "error", text: "Informe o e-mail." });
     setLoading(true);
     if (mode === "in") {
+      if (!password) { setLoading(false); return setMsg({ type: "error", text: "Informe a senha." }); }
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       setLoading(false);
-      if (error) return setMsg({ type: "error", text: "E-mail ou senha incorretos, ou e-mail ainda não confirmado." });
+      if (error) return setMsg({ type: "error", text: /rate|many/i.test(error.message) ? "Muitas tentativas. Aguarde alguns minutos." : "E-mail ou senha incorretos." });
       navigate({ to: "/admin" });
     } else {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: { emailRedirectTo: window.location.origin + "/admin", data: { name: name.trim() } },
-      });
+      await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin + "/definir-senha" });
       setLoading(false);
-      if (error) return setMsg({ type: "error", text: "Não foi possível criar a conta. Verifique os dados." });
-      setMsg({ type: "ok", text: "Conta criada! Confirme pelo link enviado ao seu e-mail. Um administrador precisa liberar seu acesso." });
+      // Same message whether or not the account exists (no account enumeration)
+      setMsg({ type: "ok", text: "Se este e-mail tiver acesso, você receberá um link para criar uma nova senha." });
     }
   }
 
@@ -58,31 +51,28 @@ function AuthPage() {
       <div className="w-full max-w-sm">
         <Logo variant="negative" className="mx-auto h-16 w-auto" />
         <h1 className="mt-8 text-center text-4xl font-extrabold uppercase italic">
-          {mode === "in" ? "Acesso da equipe" : "Criar acesso"}
+          {mode === "in" ? "Acesso da equipe" : "Recuperar senha"}
         </h1>
         <form onSubmit={submit} className="mt-6 space-y-4 rounded-md bg-card p-6 text-card-foreground">
-          {mode === "up" && (
-            <div>
-              <Label htmlFor="name">Nome</Label>
-              <Input id="name" className="h-12" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-          )}
           <div>
             <Label htmlFor="email">E-mail</Label>
             <Input id="email" type="email" className="h-12" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <div>
-            <Label htmlFor="pw">Senha</Label>
-            <Input id="pw" type="password" className="h-12" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
+          {mode === "in" && (
+            <div>
+              <Label htmlFor="pw">Senha</Label>
+              <Input id="pw" type="password" className="h-12" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+          )}
           {msg && <p className={msg.type === "error" ? "text-sm font-medium text-destructive" : "text-sm font-medium text-success"}>{msg.text}</p>}
           <button disabled={loading} className="h-12 w-full rounded-md bg-red-gradient font-display text-lg font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-60">
-            {loading ? "Aguarde..." : mode === "in" ? "Entrar" : "Criar conta"}
+            {loading ? "Aguarde..." : mode === "in" ? "Entrar" : "Enviar link"}
           </button>
         </form>
-        <button onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(null); }} className="mt-4 w-full text-center text-sm text-ink-foreground/60 underline">
-          {mode === "in" ? "Primeiro acesso? Criar conta" : "Já tenho conta"}
+        <button onClick={() => { setMode(mode === "in" ? "forgot" : "in"); setMsg(null); }} className="mt-4 w-full text-center text-sm text-ink-foreground/60 underline">
+          {mode === "in" ? "Esqueci minha senha" : "Voltar para o login"}
         </button>
+        <p className="mt-6 text-center text-xs text-ink-foreground/50">Novos membros entram somente por convite de um administrador.</p>
       </div>
     </main>
   );

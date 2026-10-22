@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          target?: string | null
+        }
+        Relationships: []
+      }
       consents: {
         Row: {
           accepted_at: string
@@ -254,6 +281,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          hits: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           checked_in_at: string | null
@@ -305,6 +350,48 @@ export type Database = {
           },
         ]
       }
+      staff_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          name: string | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          send_count: number
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          name?: string | null
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          send_count?: number
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          name?: string | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          send_count?: number
+          status?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -347,9 +434,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      hit_rate_limit: {
+        Args: { _max: number; _scope: string; _window_seconds: number }
+        Returns: undefined
+      }
       is_manager: { Args: { _user_id: string }; Returns: boolean }
       is_team: { Args: { _user_id: string }; Returns: boolean }
       is_valid_cpf: { Args: { _cpf: string }; Returns: boolean }
+      log_export: { Args: { _kind: string; _rows: number }; Returns: undefined }
       register_for_event: {
         Args: {
           _birth_date: string
@@ -362,6 +454,10 @@ export type Database = {
           _whatsapp: string
         }
         Returns: string
+      }
+      write_audit: {
+        Args: { _action: string; _details: Json; _target: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -7,7 +7,7 @@ import { PageTitle, RequireManager } from "@/components/admin/AdminShell";
 import { EventSelect, useEventsList } from "@/components/admin/EventSelect";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { STATUS_LABEL, formatDate, formatDateTime, friendlyError, maskCpf, maskPhone, onlyDigits } from "@/lib/format";
+import { STATUS_LABEL, csvSafe, formatDate, formatDateTime, friendlyError, maskCpf, maskPhone, onlyDigits } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/participantes")({
   component: () => (
@@ -98,7 +98,7 @@ function ParticipantTable() {
   function exportCsv() {
     const evName = (id: string) => events.data?.find((e) => e.id === id)?.name ?? "";
     const header = ["Evento", "Código", "Nome", "Sobrenome", "CPF", "WhatsApp", "Nascimento", "Alimento", "Status", "Check-in", "Inscrição"];
-    const esc = (v: string | undefined) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    const esc = (v: string | undefined) => `"${csvSafe(v).replace(/"/g, '""')}"`;
     const lines = filtered.map((r) => [
       evName(r.event_id), r.registration_code, r.participants?.first_name ?? "", r.participants?.last_name ?? "",
       r.participants?.cpf ?? "", r.participants?.whatsapp ?? "", formatDate(r.participants?.birth_date) ?? "",
@@ -110,6 +110,7 @@ function ParticipantTable() {
     a.download = `participantes-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
+    void supabase.rpc("log_export", { _kind: "participantes", _rows: filtered.length });
   }
 
   const sel = "h-11 rounded-md border bg-card px-3 text-sm";

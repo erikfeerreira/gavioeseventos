@@ -82,7 +82,22 @@ const ERRORS: Record<string, string> = {
   FORBIDDEN: "Você não tem permissão para esta ação.",
   NOT_FOUND: "Registro não encontrado.",
   CANCELLED: "Esta inscrição está cancelada.",
+  RATE_LIMIT: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+  LAST_ADMIN: "Não é possível: o sistema precisa de pelo menos um administrador ativo.",
+  SELF_DEACTIVATE: "Você não pode desativar a sua própria conta.",
+  SELF_DEMOTE: "Você não pode remover o seu próprio cargo de administrador.",
+  ALREADY_PENDING: "Já existe um convite pendente para este e-mail.",
+  USER_EXISTS: "Este e-mail já tem conta. Ajuste as permissões na lista da equipe.",
+  INVALID_EMAIL: "E-mail inválido.",
+  INVITE_CLOSED: "Este convite já foi aceito ou cancelado.",
+  SEND_FAILED: "Não foi possível enviar o e-mail do convite. Tente novamente.",
 };
+
+/** Prevents spreadsheet formula injection when a CSV cell starts with =, +, -, @, tab or CR. */
+export function csvSafe(v: string | undefined | null): string {
+  const s = v ?? "";
+  return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+}
 
 export function friendlyError(err: unknown): string {
   const msg = (err as { message?: string })?.message || "";
