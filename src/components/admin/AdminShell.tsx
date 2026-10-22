@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/brand/Logo";
 import { useRoles } from "@/lib/use-roles";
 
-type AdminTo = "/admin" | "/admin/participantes" | "/checkin" | "/admin/eventos" | "/admin/parceiros" | "/admin/usuarios";
+type AdminTo = "/admin" | "/admin/participantes" | "/checkin" | "/admin/eventos" | "/admin/parceiros" | "/admin/usuarios" | "/admin/historico";
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const { isAdmin, isManager, isTeam, isLoading, email } = useRoles();
@@ -26,6 +26,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     isManager && { to: "/admin/eventos" as AdminTo, label: "Eventos" },
     isManager && { to: "/admin/parceiros" as AdminTo, label: "Parceiros" },
     isAdmin && { to: "/admin/usuarios" as AdminTo, label: "Equipe" },
+    isAdmin && { to: "/admin/historico" as AdminTo, label: "Histórico" },
   ].filter((l): l is { to: AdminTo; label: string } => !!l);
 
   return (
