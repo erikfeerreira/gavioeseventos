@@ -65,6 +65,13 @@ export const inviteStaff = createServerFn({ method: "POST" })
 async function makeLink(admin: any, email: string, name: string, redirectTo: string): Promise<string | null> {
   const inv = await admin.auth.admin.generateLink({ type: "invite", email, options: { redirectTo, data: { name } } });
   if (!inv.error && inv.data?.properties?.action_link) return inv.data.properties.action_link;
+  // Only for accounts that never confirmed: a login link for an active account would let the admin enter as that person
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const existing = list?.users?.find((u: any) => (u.email ?? "").toLowerCase() === email);
+  if (!existing || existing.email_confirmed_at) {
+    console.error("generateLink invite failed", inv.error?.message);
+    return null;
+  }
   const ml = await admin.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo } });
   if (!ml.error && ml.data?.properties?.action_link) return ml.data.properties.action_link;
   console.error("generateLink failed", inv.error?.message, ml.error?.message);
