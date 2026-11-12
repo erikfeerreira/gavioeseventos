@@ -76,5 +76,21 @@ bun run build      # build de produção
 
 ## Como usei IA neste projeto
 
-<!-- Preencher -->
+Neste projeto, utilizei inteligência artificial generativa (Lovable) como acelerador de engenharia e copiloto técnico, mantendo total controle e responsabilidade sobre os requisitos de produto, arquitetura de software, segurança e validação das entregas.
 
+### 1. Papel como condutor técnico e de produto
+* **Regras de negócio e arquitetura:** Defini os modelos de dados, os fluxos do participante e da equipe de recepção, a política de não exclusão de registros (soft states) e a exigência de que dados sensíveis (PII) nunca fiquem expostos a acessos anônimos.
+* **Critérios de segurança e LGPD:** Estabeleci que todas as operações públicas (inscrição, consulta de confirmação e check-in) operassem exclusivamente por stored procedures `SECURITY DEFINER` com `Row Level Security (RLS)` restrito e `rate limiting` por IP.
+
+### 2. Depuração e resolução de problemas de produção
+* **Isolamento de runtime Node vs. Edge:** Durante a publicação para Edge (Cloudflare Workers), conduzi a investigação de um erro HTTP 500 provocado pelo empacotamento de dependências com chamadas `createRequire` do Node (`qrcode`/`pngjs`). A solução adotada foi isolar o import para o entry point de navegador (`qrcode/lib/browser`) sob lazy loading estrito ao cliente, preservando a performance do SSR.
+
+### 3. Hardening de cibersegurança a partir de auditoria real
+* A partir de um relatório de auditoria de cibersegurança, orientei o refatoramento da camada de autenticação:
+  * Desativação de cadastros públicos (`public signup`);
+  * Criação de tabela de auditoria append-only (`audit_log`);
+  * Implementação de gatilhos de integridade no banco contra remoção acidental do último administrador;
+  * Criação de fluxo alternativo e seguro de convite de equipe via link criptográfico único (SHA-256) com expiração em 24h, sem expor senhas e sem dependência de entregabilidade de e-mail.
+
+### 4. Validação e Qualidade
+* Nenhum código foi aceito sem validação prévia. Toda funcionalidade crítica foi testada ponta a ponta (E2E com Playwright e testes automatizados com Vitest), garantindo sanitização de inputs (prevenção de CSV Injection, validação algorítmica de CPF) e integridade referencial.
